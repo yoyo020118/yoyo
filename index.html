@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شات سري فوري + فيديو</title>
+    <title>شات عشوائي OmeTV Style</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -42,20 +42,18 @@
         
         .my-id-box {
             background: #2a2a2a;
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
-            margin: 20px 0;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #00ff88;
-            letter-spacing: 3px;
-            cursor: pointer;
+            margin: 10px 0;
+            font-size: 1.5rem;
+            color: #777;
+            letter-spacing: 2px;
         }
 
         input {
             width: 100%;
             padding: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-radius: 10px;
             border: 1px solid #444;
             background: #111;
@@ -64,295 +62,416 @@
             font-size: 1.1rem;
         }
 
-        button.btn-connect {
+        button {
             width: 100%;
             padding: 15px;
-            background: #007aff;
-            color: white;
             border: none;
             border-radius: 10px;
             font-size: 1.1rem;
             cursor: pointer;
             font-weight: bold;
+            margin-bottom: 10px;
+            transition: 0.2s;
         }
 
-        /* === شاشة الشات === */
+        .btn-connect { background: #333; color: white; }
+        .btn-connect:hover { background: #444; }
+
+        /* زر العشوائي الجديد */
+        .btn-random {
+            background: linear-gradient(45deg, #ff3b30, #ff9500);
+            color: white;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
+        }
+        .btn-random:hover { transform: scale(1.02); }
+
+        /* === شاشة الشات والفيديو === */
         #chatScreen {
-            display: none; /* مخفي في البداية */
+            display: none;
             flex-direction: column;
             height: 100%;
         }
 
         .chat-header {
-            padding: 15px;
+            padding: 10px;
             background: #1e1e1e;
             border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
-        .status-dot { color: #00ff88; font-size: 0.8rem; }
 
-        .messages-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 75%;
-            padding: 12px 18px;
-            border-radius: 15px;
-            font-size: 1rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .msg-me {
-            background: #007aff;
-            color: white;
-            align-self: flex-end;
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg-remote {
-            background: #333;
-            color: #ddd;
-            align-self: flex-start;
-            border-bottom-right-radius: 2px;
-        }
-
-        .input-area {
-            padding: 15px;
-            background: #1e1e1e;
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-area input { margin: 0; text-align: right; }
-        .btn-send { background: #007aff; color: white; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; }
-
-        /* === إضافات الفيديو (مثل OME TV) === */
+        /* === تصميم الفيديو (OME TV Style) === */
         #videoContainer {
-            display: none; /* يظهر عند الضغط على الزر */
+            display: flex;
             flex-direction: row;
-            height: 200px;
+            height: 40vh; /* مساحة الفيديو */
             background: #000;
-            border-bottom: 2px solid #007aff;
+            border-bottom: 4px solid #007aff;
         }
         .video-box {
             flex: 1;
             position: relative;
-            border: 1px solid #333;
+            border-right: 1px solid #222;
             overflow: hidden;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .video-box:last-child { border-right: none; }
+        
         video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+
+        .video-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            z-index: 2;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007aff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .label {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
+            bottom: 10px;
+            left: 10px;
             background: rgba(0,0,0,0.6);
-            padding: 2px 8px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-        }
-        .btn-video-start {
-            background: #ff3b30;
+            padding: 4px 10px;
             color: white;
-            border: none;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            z-index: 3;
+        }
+
+        /* منطقة الرسائل */
+        .messages-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #181818;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+        }
+        .msg-me { background: #007aff; align-self: flex-end; color: white; border-bottom-left-radius: 2px; }
+        .msg-remote { background: #333; align-self: flex-start; color: #ddd; border-bottom-right-radius: 2px; }
+
+        .input-area {
+            padding: 10px;
+            background: #1e1e1e;
+            display: flex;
+            gap: 10px;
+        }
+        .input-area input { margin: 0; text-align: right; }
+
+        /* زر التالي */
+        .btn-next {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
             padding: 5px 15px;
             border-radius: 5px;
             cursor: pointer;
-            margin-left: 10px;
-            font-weight: bold;
         }
+        .btn-next:hover { background: #555; }
 
     </style>
 </head>
 <body>
 
-    <!-- 1. شاشة الدخول والربط -->
+    <!-- 1. شاشة الدخول -->
     <div id="loginScreen">
         <div class="card">
-            <h1>💬 شات فوري</h1>
-            <p style="color:#aaa">أعط هذا الرقم لصديقك:</p>
-            <div class="my-id-box" id="myId">...</div>
+            <h1>📷 شات فيديو عشوائي</h1>
             
-            <hr style="border-color: #333; margin: 20px 0;">
+            <!-- الزر الجديد المطلوب -->
+            <button class="btn-random" onclick="startRandomSearch()">🎲 بدء المحادثة العشوائية</button>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #333; position: relative;">
+                <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #1e1e1e; padding: 0 10px; color: #666; font-size: 0.8rem;">أو يدوياً</span>
+            </div>
 
-            <p style="color:#aaa; margin-bottom: 10px;">أو ادخل رقم صديقك هنا:</p>
-            <input type="number" id="remoteIdInput" placeholder="رقم الصديق">
-            <button class="btn-connect" onclick="connectToPartner()">🔗 دخول للمحادثة</button>
+            <p style="color:#aaa; font-size:0.9rem">رقمك الخاص:</p>
+            <div class="my-id-box" id="myId">...</div>
+            <input type="number" id="remoteIdInput" placeholder="اكتب رقم صديق للاتصال المباشر">
+            <button class="btn-connect" onclick="connectToPartner()">اتصال برقم محدد</button>
         </div>
     </div>
 
-    <!-- 2. شاشة المحادثة (تظهر بعد الاتصال) -->
+    <!-- 2. شاشة الفيديو والشات -->
     <div id="chatScreen">
         <div class="chat-header">
-            <div style="display:flex; align-items:center;">
-                <h3>المحادثة 🔒</h3>
-                <!-- زر الفيديو الجديد -->
-                <button class="btn-video-start" onclick="startOmeVideo()">فيديو 📹</button>
-            </div>
+            <h3>OME Chat 🔴</h3>
             <div>
-                <span class="status-dot">● متصل</span>
+                <button class="btn-next" onclick="nextPartner()">⏭ التالي (بحث)</button>
                 <button onclick="location.reload()" style="background:none; border:none; color:red; cursor:pointer; margin-right:10px;">خروج</button>
             </div>
         </div>
 
-        <!-- منطقة الفيديو (مخفية حتى يتم الضغط) -->
+        <!-- منطقة الفيديو -->
         <div id="videoContainer">
+            <!-- فيديوي أنا -->
             <div class="video-box">
                 <video id="localVideo" autoplay muted></video>
                 <div class="label">أنت</div>
             </div>
+            <!-- فيديو الغريب -->
             <div class="video-box">
+                <div id="loadingOverlay" class="video-overlay">
+                    <div class="spinner"></div>
+                    <span>جارِ البحث عن شريك...</span>
+                </div>
                 <video id="remoteVideo" autoplay></video>
-                <div class="label">الشريك</div>
+                <div class="label">الشريك الغريب</div>
             </div>
         </div>
 
+        <!-- الشات -->
         <div class="messages-container" id="messagesList">
             <div style="text-align: center; color: #555; margin-top: 20px; font-size: 0.9rem;">
-                بدأت المحادثة المشفرة. اضغط على "فيديو" لرؤية الطرف الآخر.
+                انتظر حتى يتم العثور على شخص...
             </div>
         </div>
 
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="اكتب رسالتك..." onkeypress="handleEnter(event)">
-            <button class="btn-send" onclick="sendMessage()">➤</button>
+            <input type="text" id="msgInput" placeholder="اكتب رسالة..." onkeypress="handleEnter(event)" disabled>
+            <button class="btn-connect" style="width: auto; margin:0;" onclick="sendMessage()">➤</button>
         </div>
     </div>
 
     <script>
-        // توليد رقم عشوائي بسيط (مثل 4821)
-        const myNum = Math.floor(1000 + Math.random() * 9000).toString();
+        // لزيادة فرصة العثور على شخص في العشوائي، نقلل المدى في الديمو
+        // يمكنك تغيير 1000 و 2000 لأي أرقام
+        const minID = 1000;
+        const maxID = 5000; 
+        const myNum = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
+        
         document.getElementById('myId').innerText = myNum;
 
         let peer;
-        let conn;
-        let currentCall;
+        let conn; // اتصال الداتا
+        let call; // اتصال الفيديو
+        let localStream;
+        let isSearching = false;
 
         // إعداد PeerJS
         peer = new Peer(myNum);
 
-        peer.on('open', id => {
-            console.log('My ID:', id);
-        });
+        peer.on('open', id => { console.log('My ID:', id); });
 
-        // 1. استقبال اتصال شات نصي
+        // استقبال اتصال (نصي أو فيديو)
         peer.on('connection', connection => {
+            if(conn && conn.open) return; // مشغول
             conn = connection;
-            setupConnection();
+            setupChatConnection();
         });
 
-        // *** استقبال مكالمة الفيديو ***
-        peer.on('call', call => {
-            document.getElementById('videoContainer').style.display = 'flex';
+        peer.on('call', incomingCall => {
+            // الرد تلقائياً إذا جاء اتصال فيديو
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
-                // عرض الفيديو الخاص بي
+                localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                // الرد على المكالمة بالفيديو الخاص بي
-                call.answer(stream);
-                currentCall = call;
-
-                // استقبال فيديو الطرف الآخر
-                call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                });
-            }).catch(err => {
-                alert("يرجى السماح باستخدام الكاميرا: " + err);
+                
+                incomingCall.answer(stream);
+                call = incomingCall;
+                setupVideoCall();
+                
+                // التبديل للشاشة
+                switchToChatScreen();
+                stopSearchingUI();
             });
         });
 
-        // 2. المبادرة بالاتصال بشخص آخر
-        function connectToPartner() {
-            const remoteId = document.getElementById('remoteIdInput').value;
-            if(!remoteId) return alert("الرجاء كتابة رقم الصديق");
+        // التعامل مع الأخطاء (مهم للبحث العشوائي)
+        peer.on('error', err => {
+            console.log(err.type);
+            if (isSearching && (err.type === 'peer-unavailable' || err.type === 'socket-error')) {
+                // إذا لم نجد هذا الرقم، ابحث عن رقم آخر فوراً
+                console.log("Not found, trying next...");
+                setTimeout(searchRandomLogic, 500); 
+            }
+        });
 
-            conn = peer.connect(remoteId);
-            setupConnection();
-        }
-
-        // إعدادات ما بعد الاتصال
-        function setupConnection() {
-            // إخفاء شاشة الدخول وإظهار الشات
-            conn.on('open', () => {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('chatScreen').style.display = 'flex';
-            });
-
-            // استقبال الرسائل
-            conn.on('data', data => {
-                addMessage(data, 'remote');
-            });
-
-            // معالجة الأخطاء
-            conn.on('close', () => {
-                alert("انقطع الاتصال بالطرف الآخر");
+        // --- 1. زر البحث العشوائي ---
+        function startRandomSearch() {
+            switchToChatScreen();
+            startSearchingUI();
+            
+            // تشغيل الكاميرا الخاصة بي أولاً
+            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                localStream = stream;
+                document.getElementById('localVideo').srcObject = stream;
+                // البدء في حلقة البحث
+                isSearching = true;
+                searchRandomLogic();
+            }).catch(e => {
+                alert("يجب السماح بالكاميرا للدردشة العشوائية");
                 location.reload();
             });
         }
 
-        // *** دالة تشغيل الفيديو مثل OME TV ***
-        function startOmeVideo() {
-            if(!conn) return alert("يجب الاتصال بصديق أولاً!");
-            
-            // إظهار منطقة الفيديو
-            document.getElementById('videoContainer').style.display = 'flex';
+        // منطق البحث (يجرب أرقام عشوائية حتى يمسك خط)
+        function searchRandomLogic() {
+            if (!isSearching) return;
 
-            // طلب الكاميرا
+            // تخمين رقم عشوائي
+            const randomTarget = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
+            
+            // لا تتصل بنفسك
+            if (randomTarget === myNum) {
+                return searchRandomLogic();
+            }
+
+            console.log("Trying to connect to:", randomTarget);
+
+            // محاولة الاتصال
+            let tempConn = peer.connect(randomTarget);
+            
+            // إذا فتح الاتصال يعني وجدنا شخص!
+            tempConn.on('open', () => {
+                isSearching = false;
+                conn = tempConn;
+                setupChatConnection();
+                
+                // بدء مكالمة الفيديو فوراً
+                call = peer.call(randomTarget, localStream);
+                setupVideoCall();
+                stopSearchingUI();
+            });
+
+            // ملاحظة: إذا لم ينجح، سيتم تفعيل peer.on('error') وسنعيد المحاولة
+        }
+
+        // --- 2. الاتصال اليدوي ---
+        function connectToPartner() {
+            const remoteId = document.getElementById('remoteIdInput').value;
+            if(!remoteId) return alert("اكتب الرقم");
+            
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
                 
-                // الاتصال بالطرف الآخر فيديو
-                const call = peer.call(conn.peer, stream);
-                currentCall = call;
-
-                call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                conn = peer.connect(remoteId);
+                conn.on('open', () => {
+                    setupChatConnection();
+                    call = peer.call(remoteId, stream);
+                    setupVideoCall();
+                    switchToChatScreen();
+                    stopSearchingUI();
                 });
-            }).catch(err => {
-                alert("تعذر الوصول للكاميرا: " + err);
             });
         }
 
-        // إرسال رسالة
+        // وظائف المساعدة
+        function switchToChatScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('chatScreen').style.display = 'flex';
+        }
+
+        function startSearchingUI() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('remoteVideo').srcObject = null;
+            document.getElementById('msgInput').disabled = true;
+            addSystemMsg("جاري البحث عن شريك عشوائي... 🔎");
+        }
+
+        function stopSearchingUI() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('msgInput').disabled = false;
+            addSystemMsg("تم الاتصال! 🟢");
+        }
+
+        function nextPartner() {
+            // إغلاق الاتصال الحالي والبحث من جديد
+            if(conn) conn.close();
+            if(call) call.close();
+            conn = null;
+            call = null;
+            
+            // تنظيف الشاشة
+            document.getElementById('messagesList').innerHTML = '';
+            
+            // بدء البحث
+            isSearching = true;
+            startSearchingUI();
+            searchRandomLogic();
+        }
+
+        function setupChatConnection() {
+            conn.on('data', data => addMessage(data, 'remote'));
+            conn.on('close', () => {
+                addSystemMsg("انقطع الاتصال. اضغط التالي للبحث عن غيره.");
+                conn = null;
+            });
+        }
+
+        function setupVideoCall() {
+            call.on('stream', remoteStream => {
+                document.getElementById('remoteVideo').srcObject = remoteStream;
+            });
+            call.on('close', () => {
+                document.getElementById('remoteVideo').srcObject = null;
+            });
+        }
+
+        // الشات
         function sendMessage() {
             const input = document.getElementById('msgInput');
             const msg = input.value;
-            
             if(msg && conn && conn.open) {
-                conn.send(msg); // إرسال للصديق
-                addMessage(msg, 'me'); // عرض عندي
-                input.value = ''; // تفريغ الحقل
+                conn.send(msg);
+                addMessage(msg, 'me');
+                input.value = '';
             }
         }
 
-        // عرض الرسالة في الشاشة
         function addMessage(msg, type) {
             const container = document.getElementById('messagesList');
             const div = document.createElement('div');
             div.className = 'message ' + (type === 'me' ? 'msg-me' : 'msg-remote');
             div.innerText = msg;
-            
             container.appendChild(div);
-            // التمرير للأسفل تلقائياً لرؤية آخر رسالة
             container.scrollTop = container.scrollHeight;
         }
 
-        // إرسال عند ضغط Enter
-        function handleEnter(e) {
-            if(e.key === 'Enter') sendMessage();
+        function addSystemMsg(txt) {
+            const container = document.getElementById('messagesList');
+            const div = document.createElement('div');
+            div.style.textAlign = 'center';
+            div.style.color = '#777';
+            div.style.fontSize = '0.8rem';
+            div.style.margin = '10px 0';
+            div.innerText = txt;
+            container.appendChild(div);
         }
+
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+
     </script>
 </body>
 </html>
