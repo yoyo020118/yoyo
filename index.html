@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شات عشوائي OmeTV Style</title>
+    <title>شات فيديو عشوائي + Admin</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -15,6 +15,7 @@
             display: flex; 
             flex-direction: column; 
             overflow: hidden;
+            transition: 0.3s background;
         }
 
         /* === شاشة الدخول === */
@@ -77,7 +78,6 @@
         .btn-connect { background: #333; color: white; }
         .btn-connect:hover { background: #444; }
 
-        /* زر العشوائي الجديد */
         .btn-random {
             background: linear-gradient(45deg, #ff3b30, #ff9500);
             color: white;
@@ -102,11 +102,10 @@
             align-items: center;
         }
 
-        /* === تصميم الفيديو (OME TV Style) === */
         #videoContainer {
             display: flex;
             flex-direction: row;
-            height: 40vh; /* مساحة الفيديو */
+            height: 40vh;
             background: #000;
             border-bottom: 4px solid #007aff;
         }
@@ -122,84 +121,108 @@
         }
         .video-box:last-child { border-right: none; }
         
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        video { width: 100%; height: 100%; object-fit: cover; }
 
         .video-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.7);
-            z-index: 2;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.7); z-index: 2;
         }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007aff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 10px;
+            border: 4px solid #f3f3f3; border-top: 4px solid #007aff;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin-bottom: 10px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .label {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.6);
-            padding: 4px 10px;
-            color: white;
-            font-size: 0.9rem;
-            border-radius: 4px;
-            z-index: 3;
+            position: absolute; bottom: 10px; left: 10px;
+            background: rgba(0,0,0,0.6); padding: 4px 10px; color: white;
+            font-size: 0.9rem; border-radius: 4px; z-index: 3;
         }
 
-        /* منطقة الرسائل */
         .messages-container {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: #181818;
+            flex: 1; padding: 15px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px; background: #181818;
         }
 
-        .message {
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            font-size: 0.95rem;
-        }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 0.95rem; }
         .msg-me { background: #007aff; align-self: flex-end; color: white; border-bottom-left-radius: 2px; }
         .msg-remote { background: #333; align-self: flex-start; color: #ddd; border-bottom-right-radius: 2px; }
 
-        .input-area {
-            padding: 10px;
-            background: #1e1e1e;
-            display: flex;
-            gap: 10px;
-        }
+        .input-area { padding: 10px; background: #1e1e1e; display: flex; gap: 10px; }
         .input-area input { margin: 0; text-align: right; }
 
-        /* زر التالي */
-        .btn-next {
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 5px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .btn-next:hover { background: #555; }
+        .btn-next { background: #333; color: white; border: 1px solid #555; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
 
+        /* ========================================= */
+        /* ============== ADMIN STYLES ============= */
+        /* ========================================= */
+        
+        /* الزر السري الصغير جداً */
+        #secretAdminBtn {
+            position: fixed;
+            bottom: 5px;
+            left: 5px;
+            width: 15px;
+            height: 15px;
+            background: red;
+            border-radius: 50%;
+            opacity: 0.1; /* شفاف تقريباً */
+            cursor: default;
+            z-index: 9999;
+        }
+        #secretAdminBtn:hover { opacity: 0.5; cursor: pointer; }
+
+        /* نافذة الأدمن */
+        #adminModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0f0;
+            font-family: monospace;
+        }
+        
+        .admin-panel {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .admin-header { font-size: 1.5rem; border-bottom: 1px solid #0f0; margin-bottom: 15px; padding-bottom: 10px; display: flex; justify-content: space-between; }
+        
+        .admin-section { margin-bottom: 20px; border: 1px dashed #333; padding: 10px; }
+        .admin-section h3 { color: white; margin-bottom: 10px; font-size: 1rem; }
+        
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; color: #aaa; }
+        .stat-val { color: #fff; font-weight: bold; }
+
+        .btn-admin {
+            background: #003300; border: 1px solid #0f0; color: #0f0;
+            padding: 5px 10px; margin: 5px; font-family: monospace; cursor: pointer; width: auto; display: inline-block;
+        }
+        .btn-admin:hover { background: #0f0; color: black; }
+        .btn-kick { border-color: red; color: red; background: #300; }
+        .btn-kick:hover { background: red; color: white; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; }
+        th, td { border: 1px solid #333; padding: 5px; text-align: left; color: #ccc; }
+        th { color: #0f0; }
+
+        /* ستايل الماتريكس */
+        body.matrix-mode { background: black !important; color: #0f0 !important; }
+        body.matrix-mode .card, body.matrix-mode .chat-header, body.matrix-mode .input-area { background: #001100; border-color: #0f0; }
+        body.matrix-mode button { border: 1px solid #0f0; }
     </style>
 </head>
 <body>
@@ -208,14 +231,10 @@
     <div id="loginScreen">
         <div class="card">
             <h1>📷 شات فيديو عشوائي</h1>
-            
-            <!-- الزر الجديد المطلوب -->
             <button class="btn-random" onclick="startRandomSearch()">🎲 بدء المحادثة العشوائية</button>
-            
             <div style="margin: 20px 0; border-top: 1px solid #333; position: relative;">
                 <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #1e1e1e; padding: 0 10px; color: #666; font-size: 0.8rem;">أو يدوياً</span>
             </div>
-
             <p style="color:#aaa; font-size:0.9rem">رقمك الخاص:</p>
             <div class="my-id-box" id="myId">...</div>
             <input type="number" id="remoteIdInput" placeholder="اكتب رقم صديق للاتصال المباشر">
@@ -228,30 +247,26 @@
         <div class="chat-header">
             <h3>OME Chat 🔴</h3>
             <div>
-                <button class="btn-next" onclick="nextPartner()">⏭ التالي (بحث)</button>
+                <button class="btn-next" onclick="nextPartner()">⏭ التالي</button>
                 <button onclick="location.reload()" style="background:none; border:none; color:red; cursor:pointer; margin-right:10px;">خروج</button>
             </div>
         </div>
 
-        <!-- منطقة الفيديو -->
         <div id="videoContainer">
-            <!-- فيديوي أنا -->
             <div class="video-box">
                 <video id="localVideo" autoplay muted></video>
                 <div class="label">أنت</div>
             </div>
-            <!-- فيديو الغريب -->
             <div class="video-box">
                 <div id="loadingOverlay" class="video-overlay">
                     <div class="spinner"></div>
-                    <span>جارِ البحث عن شريك...</span>
+                    <span>جارِ البحث...</span>
                 </div>
                 <video id="remoteVideo" autoplay></video>
                 <div class="label">الشريك الغريب</div>
             </div>
         </div>
 
-        <!-- الشات -->
         <div class="messages-container" id="messagesList">
             <div style="text-align: center; color: #555; margin-top: 20px; font-size: 0.9rem;">
                 انتظر حتى يتم العثور على شخص...
@@ -264,120 +279,166 @@
         </div>
     </div>
 
+    <!-- ========================================= -->
+    <!-- ============== ADMIN PANEL ============== -->
+    <!-- ========================================= -->
+    
+    <!-- الزر السري -->
+    <div id="secretAdminBtn" onclick="openAdminAuth()"></div>
+
+    <!-- النافذة المنبثقة للأدمن -->
+    <div id="adminModal">
+        <div id="adminAuthBox" style="text-align: center;">
+            <h2 style="margin-bottom: 20px;">🔒 Security Check</h2>
+            <input type="password" id="adminPassInput" placeholder="Enter Password" style="background: #000; color: #0f0; border: 1px solid #0f0;">
+            <br>
+            <button class="btn-admin" onclick="checkAdminPass()">Access</button>
+            <button class="btn-admin" onclick="closeAdmin()" style="border-color: #555; color: #777;">Cancel</button>
+        </div>
+
+        <div id="adminPanelContent" class="admin-panel" style="display: none;">
+            <div class="admin-header">
+                <span>⚡ Admin Control Panel</span>
+                <button onclick="closeAdmin()" style="background:none; border:none; color:red; cursor:pointer;">X</button>
+            </div>
+
+            <!-- ميزة 1: الإحصائيات -->
+            <div class="admin-section">
+                <h3>📊 Connection Status</h3>
+                <div class="stat-row"><span>My ID:</span> <span id="admMyId" class="stat-val">---</span></div>
+                <div class="stat-row"><span>Connected To:</span> <span id="admRemoteId" class="stat-val" style="color: yellow;">None</span></div>
+                <div class="stat-row"><span>Status:</span> <span id="admStatus" class="stat-val">Idle</span></div>
+            </div>
+
+            <!-- ميزة 2: التحكم في الصفحة (Themes) -->
+            <div class="admin-section">
+                <h3>🎨 UI Customization</h3>
+                <button class="btn-admin" onclick="setTheme('default')">Default Dark</button>
+                <button class="btn-admin" onclick="setTheme('matrix')">Matrix Hacker</button>
+                <button class="btn-admin" onclick="setTheme('light')">Light Mode</button>
+            </div>
+
+            <!-- ميزة 3: الطرد (Kick) -->
+            <div class="admin-section">
+                <h3>🚫 User Actions</h3>
+                <p style="color: #777; font-size: 0.8rem; margin-bottom: 5px;">Force disconnect current user:</p>
+                <button class="btn-admin btn-kick" onclick="adminKickUser()">⚠️ KICK USER NOW</button>
+            </div>
+
+            <!-- ميزة 4: سجل البيانات المحفوظة -->
+            <div class="admin-section">
+                <h3>💾 Saved Logs (History)</h3>
+                <button class="btn-admin" onclick="clearLogs()" style="font-size: 0.7rem;">Clear History</button>
+                <table id="logsTable">
+                    <thead><tr><th>Time</th><th>User ID</th><th>Type</th></tr></thead>
+                    <tbody id="logsBody">
+                        <!-- البيانات ستظهر هنا -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // لزيادة فرصة العثور على شخص في العشوائي، نقلل المدى في الديمو
-        // يمكنك تغيير 1000 و 2000 لأي أرقام
         const minID = 1000;
         const maxID = 5000; 
         const myNum = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
         
         document.getElementById('myId').innerText = myNum;
+        document.getElementById('admMyId').innerText = myNum; // Admin Panel
 
         let peer;
-        let conn; // اتصال الداتا
-        let call; // اتصال الفيديو
+        let conn;
+        let call;
         let localStream;
         let isSearching = false;
+        let currentRemoteId = null; // لحفظ هوية المتصل الحالي
 
-        // إعداد PeerJS
         peer = new Peer(myNum);
 
         peer.on('open', id => { console.log('My ID:', id); });
 
-        // استقبال اتصال (نصي أو فيديو)
         peer.on('connection', connection => {
-            if(conn && conn.open) return; // مشغول
+            if(conn && conn.open) return;
             conn = connection;
+            currentRemoteId = conn.peer;
+            updateAdminStats("Connected (Text)", conn.peer);
+            saveLog(conn.peer, "Incoming Text");
             setupChatConnection();
         });
 
         peer.on('call', incomingCall => {
-            // الرد تلقائياً إذا جاء اتصال فيديو
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
                 
                 incomingCall.answer(stream);
                 call = incomingCall;
-                setupVideoCall();
+                currentRemoteId = call.peer;
                 
-                // التبديل للشاشة
+                updateAdminStats("Connected (Video)", call.peer);
+                saveLog(call.peer, "Incoming Video");
+
+                setupVideoCall();
                 switchToChatScreen();
                 stopSearchingUI();
             });
         });
 
-        // التعامل مع الأخطاء (مهم للبحث العشوائي)
         peer.on('error', err => {
-            console.log(err.type);
             if (isSearching && (err.type === 'peer-unavailable' || err.type === 'socket-error')) {
-                // إذا لم نجد هذا الرقم، ابحث عن رقم آخر فوراً
-                console.log("Not found, trying next...");
                 setTimeout(searchRandomLogic, 500); 
             }
         });
 
-        // --- 1. زر البحث العشوائي ---
         function startRandomSearch() {
             switchToChatScreen();
             startSearchingUI();
+            updateAdminStats("Searching...", "---");
             
-            // تشغيل الكاميرا الخاصة بي أولاً
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                // البدء في حلقة البحث
                 isSearching = true;
                 searchRandomLogic();
             }).catch(e => {
-                alert("يجب السماح بالكاميرا للدردشة العشوائية");
+                alert("يجب السماح بالكاميرا");
                 location.reload();
             });
         }
 
-        // منطق البحث (يجرب أرقام عشوائية حتى يمسك خط)
         function searchRandomLogic() {
             if (!isSearching) return;
-
-            // تخمين رقم عشوائي
             const randomTarget = Math.floor(Math.random() * (maxID - minID + 1) + minID).toString();
-            
-            // لا تتصل بنفسك
-            if (randomTarget === myNum) {
-                return searchRandomLogic();
-            }
+            if (randomTarget === myNum) return searchRandomLogic();
 
-            console.log("Trying to connect to:", randomTarget);
-
-            // محاولة الاتصال
             let tempConn = peer.connect(randomTarget);
-            
-            // إذا فتح الاتصال يعني وجدنا شخص!
             tempConn.on('open', () => {
                 isSearching = false;
                 conn = tempConn;
-                setupChatConnection();
+                currentRemoteId = randomTarget;
                 
-                // بدء مكالمة الفيديو فوراً
+                updateAdminStats("Connected (Initiator)", randomTarget);
+                saveLog(randomTarget, "Outgoing Call");
+
+                setupChatConnection();
                 call = peer.call(randomTarget, localStream);
                 setupVideoCall();
                 stopSearchingUI();
             });
-
-            // ملاحظة: إذا لم ينجح، سيتم تفعيل peer.on('error') وسنعيد المحاولة
         }
 
-        // --- 2. الاتصال اليدوي ---
         function connectToPartner() {
             const remoteId = document.getElementById('remoteIdInput').value;
             if(!remoteId) return alert("اكتب الرقم");
-            
             navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
                 localStream = stream;
                 document.getElementById('localVideo').srcObject = stream;
-                
                 conn = peer.connect(remoteId);
                 conn.on('open', () => {
+                    currentRemoteId = remoteId;
+                    updateAdminStats("Connected (Manual)", remoteId);
+                    saveLog(remoteId, "Manual Call");
                     setupChatConnection();
                     call = peer.call(remoteId, stream);
                     setupVideoCall();
@@ -387,7 +448,6 @@
             });
         }
 
-        // وظائف المساعدة
         function switchToChatScreen() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
@@ -397,26 +457,21 @@
             document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('remoteVideo').srcObject = null;
             document.getElementById('msgInput').disabled = true;
-            addSystemMsg("جاري البحث عن شريك عشوائي... 🔎");
         }
 
         function stopSearchingUI() {
             document.getElementById('loadingOverlay').style.display = 'none';
             document.getElementById('msgInput').disabled = false;
-            addSystemMsg("تم الاتصال! 🟢");
         }
 
         function nextPartner() {
-            // إغلاق الاتصال الحالي والبحث من جديد
             if(conn) conn.close();
             if(call) call.close();
             conn = null;
             call = null;
-            
-            // تنظيف الشاشة
+            currentRemoteId = null;
+            updateAdminStats("Skipped", "None");
             document.getElementById('messagesList').innerHTML = '';
-            
-            // بدء البحث
             isSearching = true;
             startSearchingUI();
             searchRandomLogic();
@@ -425,8 +480,8 @@
         function setupChatConnection() {
             conn.on('data', data => addMessage(data, 'remote'));
             conn.on('close', () => {
-                addSystemMsg("انقطع الاتصال. اضغط التالي للبحث عن غيره.");
                 conn = null;
+                updateAdminStats("Disconnected", "None");
             });
         }
 
@@ -439,7 +494,6 @@
             });
         }
 
-        // الشات
         function sendMessage() {
             const input = document.getElementById('msgInput');
             const msg = input.value;
@@ -459,18 +513,96 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        function addSystemMsg(txt) {
-            const container = document.getElementById('messagesList');
-            const div = document.createElement('div');
-            div.style.textAlign = 'center';
-            div.style.color = '#777';
-            div.style.fontSize = '0.8rem';
-            div.style.margin = '10px 0';
-            div.innerText = txt;
-            container.appendChild(div);
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+
+        /* ========================================= */
+        /* ============== ADMIN LOGIC ============== */
+        /* ========================================= */
+
+        // 1. الفتح والتحقق
+        function openAdminAuth() {
+            document.getElementById('adminModal').style.display = 'flex';
+            document.getElementById('adminAuthBox').style.display = 'block';
+            document.getElementById('adminPanelContent').style.display = 'none';
         }
 
-        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+        function closeAdmin() {
+            document.getElementById('adminModal').style.display = 'none';
+            document.getElementById('adminPassInput').value = '';
+        }
+
+        function checkAdminPass() {
+            const pass = document.getElementById('adminPassInput').value;
+            if(pass === "1234") { // كلمة السر
+                document.getElementById('adminAuthBox').style.display = 'none';
+                document.getElementById('adminPanelContent').style.display = 'block';
+                renderLogs();
+            } else {
+                alert("Wrong Password!");
+            }
+        }
+
+        // 2. تحديث الحالة
+        function updateAdminStats(status, remoteId) {
+            document.getElementById('admStatus').innerText = status;
+            document.getElementById('admRemoteId').innerText = remoteId;
+        }
+
+        // 3. تغيير الثيم
+        function setTheme(theme) {
+            document.body.className = '';
+            if(theme === 'matrix') {
+                document.body.classList.add('matrix-mode');
+            } else if (theme === 'light') {
+                document.body.style.background = '#f0f0f0';
+                document.body.style.color = '#333';
+            } else {
+                document.body.style.background = '#111';
+                document.body.style.color = 'white';
+            }
+        }
+
+        // 4. ميزة الطرد (Kick)
+        function adminKickUser() {
+            if(conn) {
+                conn.send("تم قطع الاتصال من قبل المسؤول.");
+                conn.close();
+            }
+            if(call) {
+                call.close();
+            }
+            alert("User Kicked!");
+            updateAdminStats("Kicked", "None");
+            document.getElementById('remoteVideo').srcObject = null;
+        }
+
+        // 5. حفظ البيانات (Logs)
+        function saveLog(id, type) {
+            let logs = JSON.parse(localStorage.getItem('chatLogs') || "[]");
+            const time = new Date().toLocaleTimeString();
+            logs.push({ time, id, type });
+            localStorage.setItem('chatLogs', JSON.stringify(logs));
+            if(document.getElementById('adminModal').style.display === 'flex') {
+                renderLogs();
+            }
+        }
+
+        function renderLogs() {
+            const logs = JSON.parse(localStorage.getItem('chatLogs') || "[]");
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = '';
+            logs.reverse().forEach(log => { // الأحدث أولاً
+                let row = `<tr><td>${log.time}</td><td>${log.id}</td><td>${log.type}</td></tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function clearLogs() {
+            if(confirm("Delete all history?")) {
+                localStorage.removeItem('chatLogs');
+                renderLogs();
+            }
+        }
 
     </script>
 </body>
